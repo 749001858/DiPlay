@@ -1,0 +1,32 @@
+DiPlay Android 4.3 receiver — v0.13 experimental
+
+Based on upstream DiPlay public preview 0.2.8 (f2d06951).
+Independent SDK18 Activity/View receiver; the upstream Android 9+ app is unchanged.
+
+Reported on one i.MX6 firmware: wireless picture, full-screen H.264, basic touch,
+remembered-phone connection, music, navigation synchronization, and Siri activation.
+GPS is readable through LocationManager. iPhone use of vehicle GPS is unverified.
+These reports are not a compatibility guarantee for other firmware.
+
+GPS: upstream identification, shared location subscription, GGA/RMC reporting and
+rate limits. Only fresh, non-mock GPS fixes are used. Unknown fields stay empty.
+A fresh cached fix is seeded at subscription; STOP cancels provider activity.
+Logs record subscription and counters, not coordinates or NMEA payloads.
+
+Steering voice: optional firmware-specific Skypine MCU callback listener.
+Disconnected: open the receiver and connect. Connected: request Siri.
+Open the app once and enable the listener. Disable it to stop background listening.
+Physical button delivery and reboot recovery still need on-device confirmation.
+Use Diagnostics > steering-key capture for a 15-second numeric event trace.
+
+Wireless handoff: release RFCOMM only after disableBluetooth and authenticated
+Wi-Fi tunnel readiness. After 45 seconds, preserve established video or clean up
+an inactive session. Complete handoff still needs device confirmation.
+
+Not implemented or not fully validated: USB/NCM, Wi-Fi Direct, BYD HUD/dashboard,
+battery/gear/wheel-speed reporting, HEVC/Opus, continuous background reconnection,
+phone calls and microphone uplink, iPhone persistent activities.
+
+Experimental authentication follows upstream public-preview packaging policy.
+This is not an Apple-certified product. Runtime identity acceptance and future
+iOS compatibility are not guaranteed. Diagnostic reports remain local.

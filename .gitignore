@@ -38,3 +38,11 @@ release-signing.properties
 *.key
 *.apk
 *.aab
+
+# Legacy receiver local toolchain, reports and firmware
+/tools/
+/downloads/
+/adaptation/output/
+/adaptation/device-reports/
+/analysis/
+*.zip

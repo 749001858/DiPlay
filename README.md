@@ -36,6 +36,10 @@ Earlier releases were tested on the development DiLink5.1 car: live windshield g
 - Optional iOS 27 video playback on the car screen while parked, with iPhone, touchscreen and steering-wheel controls. Playback closes when the car leaves P.
 - DRM-protected video such as Apple TV+ is not supported; DiPlay is not a licensed FairPlay receiver. Netflix does not support AirPlay.
 
+## Experimental legacy receiver contribution
+
+An optional [Android 4.3 / API18 receiver](adaptation/receiver/README.md) is available in this contribution branch. It uses a separate package and build, with firmware-specific limits. This does not change the upstream Android 9+ APK or BYD support policy.
+
 ## Documentation
 
 - [Install and connect](docs/INSTALL.md)
