@@ -28,6 +28,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
     private lateinit var controls: LinearLayout
     private var displayWidth = 1024
     private var displayHeight = 600
+    private var displayFps = 60
     private var sink: LegacyMediaSink? = null
     @Volatile private var controller: LegacyWirelessController? = null
     @Volatile private var destroyed = false
@@ -36,7 +37,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
     private val connectionGeneration = AtomicInteger()
     private var transitioning = false
     private val lifecycleWorker = Executors.newSingleThreadExecutor { task -> Thread(task, "legacy-receiver-lifecycle").apply { isDaemon = true } }
-    private val report = StringBuilder("DiPlay Legacy 0.13; Android SDK18; experimental\n")
+    private val report = StringBuilder("DiPlay CS11 0.14; Android 4.4/API19; experimental\n")
     private val reportStarted = android.os.SystemClock.elapsedRealtime()
     private val diagnosticHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var gpsProbe: LegacyGpsProbe
@@ -72,7 +73,15 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
         super.onCreate(state)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or WindowManager.LayoutParams.FLAG_FULLSCREEN)
         val preferences = getSharedPreferences("receiver-ui", MODE_PRIVATE)
-        if (preferences.getBoolean("lowResolution", false)) { displayWidth = 800; displayHeight = 480 }
+        val savedDisplay = preferences.getInt("displayMode", -1)
+        val displayMode = if (savedDisplay >= 0) savedDisplay else if (preferences.getBoolean("lowResolution", false)) 2 else 3
+        when (displayMode) {
+            0 -> { displayWidth = 1280; displayHeight = 720 }
+            2 -> { displayWidth = 800; displayHeight = 480 }
+            3 -> { displayWidth = 1920; displayHeight = 1080 }
+            else -> { displayWidth = 1024; displayHeight = 600 }
+        }
+        displayFps = if (preferences.getInt("displayFps", 60) >= 60) 60 else 30
         val layout = FrameLayout(this)
         controls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xee202020.toInt()) }
         var toolbar = LinearLayout(this)
@@ -89,12 +98,26 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
         button("连接 iPhone") { choosePhone() }
         button("停止") { stopReceiver() }
         button("Siri") { requestSiri("菜单") }
-        button("画质") {
+        button("分辨率") {
             AlertDialog.Builder(this).setTitle("画面分辨率（重新连接生效）")
-                .setSingleChoiceItems(arrayOf("1024×600", "800×480 兼容模式"), if (displayWidth == 800) 1 else 0) { dialog, index ->
-                    displayWidth = if (index == 0) 1024 else 800; displayHeight = if (index == 0) 600 else 480
-                    preferences.edit().putBoolean("lowResolution", index == 1).commit()
+                .setSingleChoiceItems(arrayOf("1280×720", "1024×600", "800×480 兼容模式", "1920×1080（高清）"),
+                    when (displayWidth) { 1280 -> 0; 800 -> 2; 1920 -> 3; else -> 1 }) { dialog, index ->
+                    when (index) {
+                        0 -> { displayWidth = 1280; displayHeight = 720 }
+                        2 -> { displayWidth = 800; displayHeight = 480 }
+                        3 -> { displayWidth = 1920; displayHeight = 1080 }
+                        else -> { displayWidth = 1024; displayHeight = 600 }
+                    }
+                    preferences.edit().putInt("displayMode", index).remove("lowResolution").commit()
                     dialog.dismiss(); log("画质已保存，下次连接生效")
+                }.setNegativeButton("取消", null).show()
+        }
+        button("刷新率") {
+            AlertDialog.Builder(this).setTitle("CarPlay画面刷新率（重新连接生效）")
+                .setSingleChoiceItems(arrayOf("60Hz / 60fps", "30Hz / 30fps 兼容模式"), if (displayFps == 60) 0 else 1) { dialog, index ->
+                    displayFps = if (index == 0) 60 else 30
+                    preferences.edit().putInt("displayFps", displayFps).commit()
+                    dialog.dismiss(); log("刷新率已保存为 ${displayFps}Hz，下次连接生效")
                 }.setNegativeButton("取消", null).show()
         }
         button("音视频自检") { selfTest() }
@@ -112,7 +135,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
         inputOptions.addView(vehicleGps)
         controls.addView(inputOptions)
         val steering = CheckBox(this).apply {
-            text = "方向盘语音键（后台监听）"; textSize = 12f
+            text = "领克 CS11 方控（OneOS 后台监听）"; textSize = 12f
             isChecked = preferences.getBoolean("steeringVoice", true)
             setOnCheckedChangeListener { _, enabled ->
                 preferences.edit().putBoolean("steeringVoice", enabled).commit()
@@ -120,7 +143,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
             }
         }
         controls.addView(steering)
-        status = TextView(this).apply { text = "实验接收端 v0.13：正在准备自动连接。"; textSize = 14f; setTextColor(android.graphics.Color.WHITE) }
+        status = TextView(this).apply { text = "CS11 实验接收端 v0.14：正在准备自动连接。"; textSize = 14f; setTextColor(android.graphics.Color.WHITE) }
         controls.addView(status)
         videoBox = FrameLayout(this).apply { setBackgroundColor(android.graphics.Color.BLACK) }
         video = SurfaceView(this)
@@ -153,7 +176,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
         layout.addView(controls, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
         val quickActions = LinearLayout(this)
         val menu = Button(this).apply {
-            text = "菜单 v0.13"; textSize = 13f; setPadding(0, 0, 0, 0)
+            text = "菜单 v0.14"; textSize = 13f; setPadding(0, 0, 0, 0)
             setOnClickListener { controls.visibility = if (controls.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
         }
         val actionWidth = (100 * resources.displayMetrics.density + 0.5f).toInt()
@@ -175,16 +198,16 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
             }
         }, "legacy-touch").apply { isDaemon = true; start() }
         gpsProbe = LegacyGpsProbe(this, ::log)
-        log("功能核对基准：DiPlay f2d06951；已实测核心连接/主屏；三种短音/GPS读取已实测；导航/音乐/播报/Siri已由用户确认；GPS手机使用/方向盘待验证；非全部功能等价版")
+        log("CS11适配：Android 4.4/API19；i.MX6 H.264；OneOS方控语音/播放暂停/上下曲；音量保留车机原生处理；实车仍需验证")
         diagnosticHandler.postDelayed(diagnosticTick, 15000)
         updateSteeringService(preferences.getBoolean("steeringVoice", true))
-        video.post { autoConnect() }
+        video.post { if (!handleSteeringIntent(intent)) autoConnect() }
     }
     private fun updateSteeringService(enabled: Boolean) {
         getSharedPreferences("receiver-ui", MODE_PRIVATE).edit().putBoolean("steeringVoice", enabled).commit()
         try {
             val service = android.content.Intent(this, SteeringVoiceService::class.java)
-            if (enabled) { startService(service); log("方向盘后台监听已请求；可取消勾选关闭") }
+            if (enabled) { startService(service); log("CS11 OneOS方控后台监听已请求；可取消勾选关闭") }
             else { stopService(service); log("方向盘后台监听已关闭") }
         } catch (error: Exception) { log("方向盘后台监听异常：${error.javaClass.simpleName}") }
     }
@@ -205,20 +228,52 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
         else if (controller == null && !transitioning) { log("语音键启动CarPlay：自动选择记忆手机"); autoConnect() }
         else log("语音键：CarPlay正在连接，请等待")
     }
+    private fun handleSteeringAction(action: Int, source: String, keyCode: Int) {
+        VoiceKeyJournal.drain().forEach(::log)
+        if (action == SteeringKeyPolicy.SIRI) { handleVoiceKey(); return }
+        val active = controller?.activeSession
+        if (active == null) {
+            log("方控${SteeringKeyPolicy.label(action)}[$source/$keyCode]：尚未连接CarPlay，正在启动连接")
+            if (controller == null && !transitioning) autoConnect()
+            return
+        }
+        val media = when (action) {
+            SteeringKeyPolicy.PLAY_PAUSE -> CarPlayMediaButton.PLAY_PAUSE
+            SteeringKeyPolicy.NEXT -> CarPlayMediaButton.NEXT
+            SteeringKeyPolicy.PREVIOUS -> CarPlayMediaButton.PREVIOUS
+            else -> return
+        }
+        Thread {
+            try { active.sendMedia(media); log("方控${SteeringKeyPolicy.label(action)}[$source/$keyCode]已发送") }
+            catch (error: Exception) { log("方控发送异常：${error.javaClass.simpleName}") }
+        }.start()
+    }
+    private fun handleSteeringIntent(next: android.content.Intent?): Boolean {
+        if (next?.action == SteeringVoiceService.VOICE_ACTION) { handleVoiceKey(); return true }
+        if (next?.action != SteeringVoiceService.STEERING_ACTION) return false
+        handleSteeringAction(next.getIntExtra(SteeringVoiceService.EXTRA_ACTION, SteeringKeyPolicy.NONE),
+            next.getStringExtra(SteeringVoiceService.EXTRA_SOURCE) ?: "未知",
+            next.getIntExtra(SteeringVoiceService.EXTRA_KEY_CODE, 0))
+        return true
+    }
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent); setIntent(intent)
-        if (intent.action == SteeringVoiceService.VOICE_ACTION) handleVoiceKey()
+        handleSteeringIntent(intent)
     }
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (android.os.SystemClock.elapsedRealtime() < VoiceKeyJournal.captureUntil)
             log("窗口按键检测：code=${event.keyCode}；action=${event.action}；repeat=${event.repeatCount}")
-        if (!VoiceKeyPolicy.isWindowVoice(event.keyCode)) return super.dispatchKeyEvent(event)
-        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled && VoiceKeyJournal.gate.accept(android.os.SystemClock.elapsedRealtime())) handleVoiceKey()
+        val action = SteeringKeyPolicy.fromAndroid(event.keyCode)
+        if (action == SteeringKeyPolicy.NONE && !VoiceKeyPolicy.isWindowVoice(event.keyCode)) return super.dispatchKeyEvent(event)
+        val resolved = if (action == SteeringKeyPolicy.NONE) SteeringKeyPolicy.SIRI else action
+        if (event.action == KeyEvent.ACTION_UP && !event.isCanceled &&
+            SteeringDispatchGate.accept(resolved, android.os.SystemClock.elapsedRealtime()))
+            handleSteeringAction(resolved, "窗口按键", event.keyCode)
         return true
     }
     private fun showDiagnostics() {
         val items = arrayOf("功能状态汇总", "车辆GPS检测（60秒）", "导航测试标记", "音频/触摸/Siri结果标记", "声音通道短音测试（先停止连接）", "与原项目功能核对", "方向盘按键检测（15秒）")
-        AlertDialog.Builder(this).setTitle("功能诊断 · v0.13")
+        AlertDialog.Builder(this).setTitle("功能诊断 · v0.14 CS11")
             .setItems(items) { _, index -> when (index) {
                 0 -> diagnosticSummary()
                 1 -> gpsProbe.start()
@@ -229,7 +284,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
                 6 -> {
                     VoiceKeyJournal.captureUntil = android.os.SystemClock.elapsedRealtime() + 15000
                     controls.visibility = View.GONE
-                    log("方向盘按键检测已开始：15秒内按语音按钮短按/长按；只记录键值，不记录输入文字")
+                    log("CS11方控检测已开始：15秒内依次按语音/播放/上一曲/下一曲；只记录键值，不记录输入文字")
                     diagnosticHandler.postDelayed({ if (!destroyed) { VoiceKeyJournal.drain().forEach(::log); log("方向盘按键检测结束，请导出日志") } }, 15000)
                 }
             } }.setNegativeButton("取消", null).show()
@@ -239,7 +294,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
             val contents = assets.open("feature-parity.txt").bufferedReader(Charsets.UTF_8).use { it.readText() }
             val text = TextView(this).apply { this.text = contents; textSize = 16f; setPadding(20, 16, 20, 16) }
             val scroll = ScrollView(this).apply { addView(text) }
-            AlertDialog.Builder(this).setTitle("功能核对 · v0.13")
+            AlertDialog.Builder(this).setTitle("功能核对 · v0.14 CS11")
                 .setView(scroll).setPositiveButton("关闭", null).show()
             log("查看功能核对：这是版本能力说明，不是当前会话测试结果")
         } catch (error: Exception) { log("功能核对读取失败：${error.javaClass.simpleName}") }
@@ -320,7 +375,7 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
                 }
             }, displayWidth, displayHeight)
             sink = media; if (video.holder.surface.isValid) media.setSurface(video.holder.surface)
-            next = LegacyWirelessController(applicationContext, media, ::log, displayWidth, displayHeight, vehicleGps.isChecked) { reason ->
+            next = LegacyWirelessController(applicationContext, media, ::log, displayWidth, displayHeight, displayFps, vehicleGps.isChecked) { reason ->
                 runOnUiThread {
                     if (!destroyed && controller === next) stopReceiver {
                         controls.visibility = View.VISIBLE
@@ -329,8 +384,8 @@ class ReceiverActivity : Activity(), SurfaceHolder.Callback {
                 }
             }
             controller = next
-            log("请求画面=${displayWidth}×${displayHeight}；连接后自动收起工具栏")
-            log("本次配置：麦克风启用=${microphone.isChecked}；GPS上报启用=${vehicleGps.isChecked}（等待手机订阅）；音频支持PCM/AAC；视频H264；持续重连/轮速挡位未接入；方向盘语音回调待实测")
+            log("请求画面=${displayWidth}×${displayHeight}@${displayFps}Hz；连接后自动收起工具栏")
+            log("本次配置：麦克风启用=${microphone.isChecked}；GPS上报启用=${vehicleGps.isChecked}（等待手机订阅）；音频PCM/AAC；视频H264；CS11 OneOS方控已启用；持续重连/轮速挡位未接入")
             next.start(phone, microphone.isChecked)
         }
     }

@@ -7,7 +7,7 @@ sdk_dir=${DIPLAY_PROBE_SDK_DIR:-"$workspace_dir/tools/android"}
 build_dir="$project_dir/build"
 kotlin_dir=${DIPLAY_KOTLIN_DIR:-"$workspace_dir/tools/kotlinc"}
 build_tools=${DIPLAY_BUILD_TOOLS_DIR:-"$sdk_dir/android-14"}
-platform_jar=${DIPLAY_PLATFORM_JAR:-"$sdk_dir/android-4.3.1/android.jar"}
+platform_jar=${DIPLAY_PLATFORM_JAR:-"$sdk_dir/android-4.4.2/android.jar"}
 deps=${DIPLAY_DEPS_DIR:-"$workspace_dir/downloads"}
 "$jdk_dir/bin/java" -Xmx2g -cp "$build_tools/lib/d8.jar" com.android.tools.r8.R8 \
     --classfile --release --pg-conf "$project_dir/shrink.pro" --lib "$platform_jar" \

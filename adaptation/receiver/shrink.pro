@@ -2,7 +2,7 @@
 -dontobfuscate
 -keep class local.airuize.receiver.** { *; }
 -keepattributes InnerClasses,EnclosingMethod,Signature,Exceptions,SourceFile,LineNumberTable
-# SDK18 EnumMap obtains enum constants by reflecting on values(). R8 full mode
+# Legacy Android EnumMap obtains enum constants by reflecting on values(). R8 full mode
 # cannot infer that library-side access; removing it breaks JmDNS ServiceInfo.
 -keepclassmembers enum * {
     public static **[] values();

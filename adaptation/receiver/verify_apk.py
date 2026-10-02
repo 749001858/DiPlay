@@ -1,4 +1,4 @@
-"""Verify legacy DEX format and reject platform classes missing from SDK18."""
+"""Verify legacy DEX format and reject platform classes missing from API 19."""
 from pathlib import Path
 from zipfile import ZipFile
 import struct
@@ -6,8 +6,8 @@ import hashlib
 import os
 
 root = Path(__file__).resolve().parents[2]
-apk = root / 'adaptation/output/DiPlay-Android43-Wireless-Experimental.apk'
-sdk = Path(os.environ.get('DIPLAY_PLATFORM_JAR', root / 'tools/android/android-4.3.1/android.jar'))
+apk = root / 'adaptation/output/DiPlay-Android443-CS11-Wireless-Experimental.apk'
+sdk = Path(os.environ.get('DIPLAY_PLATFORM_JAR', root / 'tools/android/android-4.4.2/android.jar'))
 with ZipFile(sdk) as platform:
     available = {'L' + name[:-6] + ';' for name in platform.namelist() if name.endswith('.class')}
     platform_bytes = {name[:-6]: platform.read(name) for name in platform.namelist() if name.endswith('.class')}
@@ -15,7 +15,7 @@ with ZipFile(apk) as package:
     assert package.testzip() is None
     assert not any(name.startswith('lib/') for name in package.namelist())
     dex_names = [name for name in package.namelist() if name.endswith('.dex')]
-    assert dex_names == ['classes.dex'], 'API18 build must be single-DEX'
+    assert dex_names == ['classes.dex'], 'API19 build must be single-DEX'
     data = package.read('classes.dex')
     assert data[:8] == b'dex\n035\0'
     def u32(offset): return struct.unpack_from('<I', data, offset)[0]
@@ -51,7 +51,7 @@ with ZipFile(apk) as package:
                 delta, cursor = uleb(cursor); method_id += delta
                 access, cursor = uleb(cursor); code, cursor = uleb(cursor)
                 declared_methods[method_id] = (access, code)
-    # SDK18 EnumMap reflects values(); API member checks alone cannot catch its removal.
+    # Android's legacy EnumMap reflects values(); API member checks alone cannot catch its removal.
     fields_type = 'Ljavax/jmdns/ServiceInfo$Fields;'
     fields_values_found = False
     startup_debug_found = False
@@ -68,7 +68,7 @@ with ZipFile(apk) as package:
     vm_annotations = {'Ldalvik/annotation/' + name + ';' for name in
                       ['EnclosingClass', 'EnclosingMethod', 'InnerClass', 'MemberClasses', 'Signature']}
     missing = sorted(t for t in types if t.startswith(('Ljava/', 'Ljavax/', 'Landroid/', 'Ldalvik/')) and t not in available and t not in defined and t not in vm_annotations)
-    assert not missing, 'Platform types unavailable on SDK18: ' + str(missing)
+    assert not missing, 'Platform types unavailable on API 19: ' + str(missing)
     cache = {}
     def class_members(name):
         if name in cache: return cache[name]
@@ -130,7 +130,7 @@ with ZipFile(apk) as package:
         if owner not in available or owner in defined: continue
         if not exists(owner[1:-1], strings[name_id], types[type_id], 'field'):
             unavailable.append(owner + '->' + strings[name_id] + ':' + types[type_id])
-    assert not unavailable, 'Platform members unavailable on SDK18: ' + str(unavailable)
+    assert not unavailable, 'Platform members unavailable on API 19: ' + str(unavailable)
     auth = os.environ.get('DIPLAY_AUTH_ASSETS_DIR')
     names = ['identity.pk8', 'certificate.p7b']
     if auth:
@@ -138,6 +138,6 @@ with ZipFile(apk) as package:
             assert package.read('assets/offline-mfi/' + name) == (Path(auth)/'offline-mfi'/name).read_bytes()
     else:
         assert not any(name.startswith('assets/offline-mfi/') for name in package.namelist()), 'Unexpected runtime identity'
-    print('PASS: SDK18 platform references, DEX035, single DEX, CRC, explicit runtime asset policy, mDNS reflection, stack line metadata')
+    print('PASS: SDK19 platform references, DEX035, single DEX, CRC, explicit runtime asset policy, mDNS reflection, stack line metadata')
     print('DEX method references:', u32(88))
 print('APK SHA256:', hashlib.sha256(apk.read_bytes()).hexdigest())

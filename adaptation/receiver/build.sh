@@ -5,7 +5,7 @@ workspace_dir=$(CDPATH= cd -- "$project_dir/../.." && pwd)
 sdk_dir=${DIPLAY_PROBE_SDK_DIR:-"$workspace_dir/tools/android"}
 jdk_dir=${DIPLAY_PROBE_JDK_DIR:-${JAVA_HOME:?Set JAVA_HOME to JDK 11}}
 build_tools=${DIPLAY_BUILD_TOOLS_DIR:-"$sdk_dir/android-14"}
-platform_jar=${DIPLAY_PLATFORM_JAR:-"$sdk_dir/android-4.3.1/android.jar"}
+platform_jar=${DIPLAY_PLATFORM_JAR:-"$sdk_dir/android-4.4.2/android.jar"}
 build_dir="$project_dir/build"
 delivery_dir="$workspace_dir/adaptation/output"
 kotlin_dir=${DIPLAY_KOTLIN_DIR:-"$workspace_dir/tools/kotlinc"}
@@ -45,7 +45,7 @@ compiler_cp="$platform_jar:$dependencies/bcprov-jdk15to18-1.79.jar:$dependencies
     "$build_dir/upstream" "$project_dir/src" -d "$build_dir/receiver.jar"
 "$build_tools/aapt" package -f -M "$project_dir/AndroidManifest.xml" -S "$project_dir/res" \
     -A "$build_dir/assets" -I "$platform_jar" -0 mp4 -0 m4a -F "$build_dir/resources.apk"
-"$jdk_dir/bin/java" -Xmx2g -cp "$build_tools/lib/d8.jar" com.android.tools.r8.R8 --release --min-api 18 \
+"$jdk_dir/bin/java" -Xmx2g -cp "$build_tools/lib/d8.jar" com.android.tools.r8.R8 --release --min-api 19 \
     --pg-conf "$project_dir/shrink.pro" --lib "$platform_jar" --output "$build_dir/dex" "$build_dir/receiver.jar" "$build_dir/java.jar" \
     "$kotlin_dir/lib/kotlin-stdlib.jar" "$dependencies/bcprov-jdk15to18-1.79.jar" \
     "$build_dir/jmdns-legacy.jar" "$dependencies/slf4j-api-1.7.36.jar" "$dependencies/slf4j-nop-1.7.36.jar"
@@ -59,9 +59,9 @@ if [ ! -f "$build_dir/receiver.keystore" ]; then
 fi
 "$jdk_dir/bin/java" -jar "$build_tools/lib/apksigner.jar" sign --ks "$build_dir/receiver.keystore" \
     --ks-key-alias receiver --ks-pass pass:local-test-only --key-pass pass:local-test-only \
-    --min-sdk-version 18 --v1-signing-enabled true --v2-signing-enabled false --v3-signing-enabled false \
-    --v4-signing-enabled false --out "$delivery_dir/DiPlay-Android43-Wireless-Experimental.apk" "$build_dir/aligned.apk"
-"$jdk_dir/bin/java" -jar "$build_tools/lib/apksigner.jar" verify --verbose --min-sdk-version 18 \
-    "$delivery_dir/DiPlay-Android43-Wireless-Experimental.apk"
-"$build_tools/aapt" dump badging "$delivery_dir/DiPlay-Android43-Wireless-Experimental.apk"
-shasum -a 256 "$delivery_dir/DiPlay-Android43-Wireless-Experimental.apk"
+    --min-sdk-version 19 --v1-signing-enabled true --v2-signing-enabled false --v3-signing-enabled false \
+    --v4-signing-enabled false --out "$delivery_dir/DiPlay-Android443-CS11-Wireless-Experimental.apk" "$build_dir/aligned.apk"
+"$jdk_dir/bin/java" -jar "$build_tools/lib/apksigner.jar" verify --verbose --min-sdk-version 19 \
+    "$delivery_dir/DiPlay-Android443-CS11-Wireless-Experimental.apk"
+"$build_tools/aapt" dump badging "$delivery_dir/DiPlay-Android443-CS11-Wireless-Experimental.apk"
+shasum -a 256 "$delivery_dir/DiPlay-Android443-CS11-Wireless-Experimental.apk"

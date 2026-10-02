@@ -1,5 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="local.airuize.diplaylegacy" android:versionCode="13" android:versionName="0.13-experimental">
-    <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="18" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="local.airuize.diplaylegacy" android:versionCode="14" android:versionName="0.14-cs11">
+    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="19" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="geely.oneos.permission.SERVICE" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -25,6 +26,11 @@
             </intent-filter>
         </activity>
         <service android:name="local.airuize.receiver.SteeringVoiceService" android:exported="false" />
+        <receiver android:name="local.airuize.receiver.LegacyMediaButtonReceiver" android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
         <receiver android:name="local.airuize.receiver.SteeringBootReceiver" android:exported="false">
             <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
         </receiver>

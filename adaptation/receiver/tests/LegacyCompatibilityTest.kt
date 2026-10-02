@@ -10,6 +10,29 @@ import com.shilapi.xcertplay.airplay.AirPlayConfig
 import com.shilapi.xcertplay.airplay.AirPlayDisplayConfig
 
 class LegacyCompatibilityTest {
+    @Test fun cs11OneOsKeysMapToCarPlayActions() {
+        assertEquals(SteeringKeyPolicy.SIRI, SteeringKeyPolicy.fromOneOs(200231))
+        assertEquals(SteeringKeyPolicy.PLAY_PAUSE, SteeringKeyPolicy.fromOneOs(200085))
+        assertEquals(SteeringKeyPolicy.NEXT, SteeringKeyPolicy.fromOneOs(200087))
+        assertEquals(SteeringKeyPolicy.PREVIOUS, SteeringKeyPolicy.fromOneOs(200088))
+        assertEquals(SteeringKeyPolicy.NONE, SteeringKeyPolicy.fromOneOs(200024))
+        assertArrayEquals(intArrayOf(200231, 200085, 200087, 200088), SteeringKeyPolicy.oneOsKeys)
+    }
+    @Test fun androidMediaKeysMapWithoutTakingVolume() {
+        assertEquals(SteeringKeyPolicy.SIRI, SteeringKeyPolicy.fromAndroid(231))
+        assertEquals(SteeringKeyPolicy.PLAY_PAUSE, SteeringKeyPolicy.fromAndroid(85))
+        assertEquals(SteeringKeyPolicy.NEXT, SteeringKeyPolicy.fromAndroid(87))
+        assertEquals(SteeringKeyPolicy.PREVIOUS, SteeringKeyPolicy.fromAndroid(88))
+        assertEquals(SteeringKeyPolicy.NONE, SteeringKeyPolicy.fromAndroid(24))
+    }
+    @Test fun cs11FullHd60ModeIsAdvertisedToCarPlay() {
+        val config = AirPlayConfig("CS11", "02:00:00:00:00:01", "02:00:00:00:00:02", "950.7.1",
+            AirPlayDisplayConfig(1920, 1080, fps = 60))
+        val display = (AirPlayInfoPlist.build(config)["displays"] as List<*>).first() as Map<*, *>
+        assertEquals(1920, display["widthPixels"])
+        assertEquals(1080, display["heightPixels"])
+        assertEquals(60, display["maxFPS"])
+    }
     @Test fun gpsReporterSendsInitialFixAndStopsSharedWifiRequest() {
         var now = 0L
         val shared = com.shilapi.xcertplay.transport.Iap2LocationRequest()

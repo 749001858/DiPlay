@@ -42,7 +42,7 @@ for source in chosen:
     text = text.replace('Math.floorDiv', 'local.airuize.receiver.LegacyNumbers.floorDiv')
     text = text.replace('Math.floorMod', 'local.airuize.receiver.LegacyNumbers.floorMod')
     if source.name == 'AirPlayInfoPlist.kt':
-        # The SDK18 sink implements PCM and AAC only: do not negotiate unsupported Opus streams.
+        # The API19 sink implements PCM and AAC only: do not negotiate unsupported Opus streams.
         text = text.replace('val opus = 0x70000000', 'val opus = 0')
     if source.name == 'CarPlayMediaEngine.kt':
         target = '        val microphone = microphoneConfig(session, type, stream, format)'
@@ -109,7 +109,7 @@ for source in chosen:
         assert marker in text
         text = text.replace(marker, additions + marker)
     text = text.replace('if (failure != null) throw failure', 'failure?.let { throw it }')
-    # SDK18 sockets predate their Closeable interfaces.
+    # The legacy Android sockets predate their Closeable interfaces.
     import re
     text = re.sub(r'fun safeClose\((\w+): Closeable\?\)', r'fun safeClose(\1: Any?)', text)
     if 'fun safeClose' in text:

@@ -18,7 +18,8 @@ import javax.jmdns.*
 
 /** A wireless-only controller: existing car AP -> RFCOMM -> iAP2 -> AirPlay media/tunnel. */
 class LegacyWirelessController(private val context: Context, private val sink: LegacyMediaSink,
-    private val log: (String) -> Unit, private val displayWidth: Int = 1024, private val displayHeight: Int = 600, private val gpsEnabled: Boolean = true,
+    private val log: (String) -> Unit, private val displayWidth: Int = 1024, private val displayHeight: Int = 600,
+    private val displayFps: Int = 60, private val gpsEnabled: Boolean = true,
     private val onConnectionFailure: (String) -> Unit = {}) : Closeable {
     private val closed = CloseGate()
     private val resources = ArrayList<() -> Unit>()
@@ -152,12 +153,12 @@ class LegacyWirelessController(private val context: Context, private val sink: L
                 context.assets.open("offline-mfi/$name").use { input -> destination.outputStream().use { input.copyTo(it) } }
             }
             val mfi = LocalMfiAuthenticationClient.load(authenticationDirectory)
-            val config = AirPlayConfig("DiPlay Legacy", deviceId, btMac, "950.7.1",
-                AirPlayDisplayConfig(displayWidth, displayHeight, fps = 30), hevc = false, microphone = microphone,
-                manufacturer = "DiPlay Legacy", model = "iMX6-Android43", oemLabel = "车机")
+            val config = AirPlayConfig("DiPlay CS11", deviceId, btMac, "950.7.1",
+                AirPlayDisplayConfig(displayWidth, displayHeight, fps = displayFps.coerceIn(30, 60)), hevc = false, microphone = microphone,
+                manufacturer = "DiPlay", model = "CS11-iMX6-Android443", oemLabel = "领克 CS11")
             val media = CarPlayMediaEngine(sink, microphoneEnabled = microphone)
-            val identification = Iap2IdentificationConfig("DiPlay Legacy", "iMX6-Android43", "DiPlay Legacy",
-                identity.pairingId, "0.12", "iMX6", Iap2WirelessIdentification(btMac, unquote(ap.SSID))).copy(locationInformationEnabled = gpsEnabled)
+            val identification = Iap2IdentificationConfig("DiPlay CS11", "CS11-iMX6-Android443", "DiPlay",
+                identity.pairingId, "0.14", "iMX6Q", Iap2WirelessIdentification(btMac, unquote(ap.SSID))).copy(locationInformationEnabled = gpsEnabled)
             val channel = try { ap.javaClass.getField("apChannel").getInt(ap).coerceIn(0, 255) } catch (_: Exception) { 0 }
             if (channel == 0) log("热点信道未知，将按上游允许的未知信道值尝试连接")
             step("准备无线启动参数")

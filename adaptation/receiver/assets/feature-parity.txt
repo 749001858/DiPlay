@@ -1,7 +1,10 @@
-DiPlay Android 4.3 receiver — v0.13 experimental
+DiPlay Android 4.4.3 / Lynk & Co CS11 receiver — v0.14 experimental
 
 Based on upstream DiPlay public preview 0.2.8 (f2d06951).
-Independent SDK18 Activity/View receiver; the upstream Android 9+ app is unchanged.
+Independent API19 Activity/View receiver; the upstream Android 9+ app is unchanged.
+
+Display: defaults to a 1920x1080, 60fps AirPlay request. The in-app resolution and
+refresh-rate buttons also expose 1280x720, 1024x600, 800x480 and 30fps fallbacks.
 
 Reported on one i.MX6 firmware: wireless picture, full-screen H.264, basic touch,
 remembered-phone connection, music, navigation synchronization, and Siri activation.
@@ -13,8 +16,9 @@ rate limits. Only fresh, non-mock GPS fixes are used. Unknown fields stay empty.
 A fresh cached fix is seeded at subscription; STOP cancels provider activity.
 Logs record subscription and counters, not coordinates or NMEA payloads.
 
-Steering voice: optional firmware-specific Skypine MCU callback listener.
-Disconnected: open the receiver and connect. Connected: request Siri.
+Steering controls: CS11 OneOS listener-only mappings for voice/Siri, previous,
+next and play/pause, plus Android media-button and Skypine voice fallbacks.
+Disconnected voice key: open the receiver and connect. Connected: request Siri.
 Open the app once and enable the listener. Disable it to stop background listening.
 Physical button delivery and reboot recovery still need on-device confirmation.
 Use Diagnostics > steering-key capture for a 15-second numeric event trace.
