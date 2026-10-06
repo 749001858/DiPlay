@@ -1,0 +1,13 @@
+name: Publish CS11 v0.23.10
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Release workflow will be finalized after APK blob staging."
