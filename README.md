@@ -1,3 +1,21 @@
+# 基于领克CS11车机版本优化的DiPaly
+
+> 参考原作者DiPlay项目优化
+
+面向 **领克 CS11 / OneOS** 老车机平台的 Android 4.4.3（API 19）无线 CarPlay 实验适配版本。当前正式发布目标版本为 **v0.23.10**。
+
+**v0.23.10 重点：** 首页独立音乐 / 导航音量；导航播报时音乐自动降低至所选音量的 28%，约 0.9 秒后恢复；无线 Wi-Fi 认证交接后尝试通过 ECARX 原厂蓝牙服务断开当前 iPhone（保留配对和蓝牙总开关）；OneOS 方向盘语音 / Siri、上一曲、下一曲、播放暂停；ECARX DIM 仪表导航适配；老平台 H.264、网络与重连优化。
+
+**主要参数：** Android 4.4.3 / API 19；默认 1280×650 @ 30 fps；可选 1024×520、768×390、512×260、1536×780；可选 60 fps；最终 APK 约 970 KB；109 项自动测试通过；single DEX / DEX 035；v1 APK signing。
+
+[查看 v0.23.10 发布说明](docs/RELEASE-CS11-v0.23.10.md) · [GitHub Releases](https://github.com/749001858/DiPlay/releases) · [早期 CS11 适配源码分支](https://github.com/749001858/DiPlay/tree/android-4.4-cs11)
+
+> **源码状态说明：** 当前 `android-4.4-cs11` 分支仍是早期适配源码，并非 v0.23.10 最终 APK 的精确对应源码。发布页会明确保留这一状态，避免把旧源码误标为最终源码。
+
+---
+
+## 上游原项目说明
+
 # DiPlay
 
 **CarPlay for compatible BYD Android head units.** Wired and wireless, with the familiar DiAuto interface. Independent app: `com.shihab.diplay`.
