@@ -1,13 +1,41 @@
 name: Publish CS11 v0.23.10
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-cs11-v0.23.10.yml"
 
 permissions:
   contents: write
 
 jobs:
-  placeholder:
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Release workflow will be finalized after APK blob staging."
+      - uses: actions/checkout@v4
+
+      - name: Prepare checksum
+        shell: bash
+        run: |
+          cat > SHA256SUMS-CS11-v0.23.10.txt <<'EOF'
+          cef4497fc5466f73b0100f1f79d9dbfcef423ad69821987bcb0f7e557f557005  DiPlay-v0.23.10-CS11-Volume-Final.apk
+          EOF
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v0.23.10 >/dev/null 2>&1; then
+            gh release edit v0.23.10 \
+              --title "基于领克CS11车机版本优化的DiPaly v0.23.10" \
+              --notes-file docs/RELEASE-CS11-v0.23.10.md
+            gh release upload v0.23.10 SHA256SUMS-CS11-v0.23.10.txt --clobber
+          else
+            gh release create v0.23.10 SHA256SUMS-CS11-v0.23.10.txt \
+              --target "${GITHUB_SHA}" \
+              --title "基于领克CS11车机版本优化的DiPaly v0.23.10" \
+              --notes-file docs/RELEASE-CS11-v0.23.10.md
+          fi
